@@ -22,8 +22,7 @@ logging.basicConfig(
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     await update.message.reply_text(
-        f"Welcome to Vision30X Bot!\n\nYour chat ID:\n`{user_id}`\n\nPaste it into your `.env` file as:\n\n`CHAT_ID={user_id}`",
-        parse_mode="Markdown"
+        f"Welcome to Vision30X Bot!\n\nYour chat ID:\n{user_id}\n\nPaste it into your `.env` file as:\n\nCHAT_ID={user_id}"
     )
     logging.info(f"/start used by chat_id {user_id}")
 
@@ -36,7 +35,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     card = context.bot_data.get("chosen_card")
     now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
-    msg = f"📋 *Vision30X Status*\n\n🕒 {now} IST\n"
+    msg = f"📋 Vision30X Status\n\n🕒 {now} IST\n"
 
     if manifest:
         msg += f"\n🧠 Manifest ID: {manifest['id']}\n→ “{manifest['set'][0][:40]}...”"
@@ -44,11 +43,11 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg += "\n🧠 Manifestation: Not yet picked."
 
     if card:
-        msg += f"\n\n🃏 Card: *{card['title']}*"
+        msg += f"\n\n🃏 Card: {card['title']}"
     else:
         msg += "\n\n🃏 Card: Not drawn yet."
 
-    await update.message.reply_text(msg, parse_mode="Markdown")
+    await update.message.reply_text(msg)
     logging.info("Status command responded.")
 
 async def force_manifest(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,7 +62,7 @@ async def force_manifest(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def force_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        send_card_prompt(context.application)
+        await send_card_prompt(context.application)
         await update.message.reply_text("🃏 Card prompt sent.")
         logging.info("/force_card used.")
     except Exception as e:
@@ -72,7 +71,7 @@ async def force_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def force_reveal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        send_card_reveal(context.application)
+        await send_card_reveal(context.application)
         await update.message.reply_text("🔮 Card revealed.")
         logging.info("/force_reveal used.")
     except Exception as e:
@@ -80,26 +79,26 @@ async def force_reveal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Failed to reveal card.")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🧠 *Vision30X Bot Help*\n\n"
+    help_text = (
+        "🧠 Vision30X Bot Help\n\n"
         "This bot sends daily belief-boosting messages and affirmation cards inspired by elite mindset rituals.\n\n"
-        "⏱ *Daily Schedule:*\n"
+        "⏱ Daily Schedule:\n"
         "• 9:00 AM - Manifestation (Root Thought)\n"
         "• 9:15 AM - Manifestation (Reframe)\n"
         "• 9:30 AM - Manifestation (Reinforce)\n"
         "• 10:00 AM - Card drawn (kept hidden)\n"
         "• 7:00 PM - Card revealed with reflection\n\n"
-        "🛠 *Manual Commands:*\n"
-        "• `/force_manifest` — Send all 3 manifestations now\n"
-        "• `/force_card` — Pick a card immediately (remains hidden)\n"
-        "• `/force_reveal` — Reveal the current card\n"
-        "• `/status` — See today's manifestation/card\n"
-        "• `/health` — Ping the bot to check if it's live\n"
-        "• `/start` — Get your CHAT_ID for config\n"
-        "• `/help` — Show this message\n\n"
-        "_Use manual commands if the bot restarted mid-day or missed a scheduled message._",
-        parse_mode="Markdown"
+        "🛠 Manual Commands:\n"
+        "• /force_manifest — Send all 3 manifestations now\n"
+        "• /force_card — Pick a card immediately (remains hidden)\n"
+        "• /force_reveal — Reveal the current card\n"
+        "• /status — See today's manifestation/card\n"
+        "• /health — Ping the bot to check if it's live\n"
+        "• /start — Get your CHAT_ID for config\n"
+        "• /help — Show this message\n\n"
+        "Use manual commands if the bot restarted mid-day or missed a scheduled message."
     )
+    await update.message.reply_text(help_text)
     logging.info("Help command served.")
 
 def setup_handlers(app):
