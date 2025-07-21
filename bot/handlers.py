@@ -2,11 +2,22 @@ from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
 from datetime import datetime
 import pytz
+import logging
+import os
 
 from bot.manifestation import send_manifestation
 from bot.cards import send_card_prompt, send_card_reveal
 
 tz = pytz.timezone("Asia/Kolkata")
+
+# Logging setup
+LOG_DIR = "/var/log/vision30x"
+os.makedirs(LOG_DIR, exist_ok=True)
+logging.basicConfig(
+    filename=os.path.join(LOG_DIR, "bot.log"),
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
@@ -14,9 +25,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Welcome to Vision30X Bot!\n\nYour chat ID:\n`{user_id}`\n\nPaste it into your `.env` file as:\n\n`CHAT_ID={user_id}`",
         parse_mode="Markdown"
     )
+    logging.info(f"/start used by chat_id {user_id}")
 
 async def health(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✅ Bot is alive and responding.")
+    logging.info("/health command acknowledged.")
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     manifest = context.bot_data.get("today_manifest")
@@ -36,19 +49,35 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg += "\n\n🃏 Card: Not drawn yet."
 
     await update.message.reply_text(msg, parse_mode="Markdown")
+    logging.info("Status command responded.")
 
 async def force_manifest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("⏱ Sending 3 manifestations...")
-    for i in range(3):
-        send_manifestation(context.application, i)
+    logging.info("Manual trigger: /force_manifest")
+    try:
+        for i in range(3):
+            await send_manifestation(context.application, i)
+    except Exception as e:
+        logging.error(f"Error in /force_manifest: {e}")
+        await update.message.reply_text("❌ Failed to send manifestations.")
 
 async def force_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    send_card_prompt(context.application)
-    await update.message.reply_text("🃏 Card prompt sent.")
+    try:
+        send_card_prompt(context.application)
+        await update.message.reply_text("🃏 Card prompt sent.")
+        logging.info("/force_card used.")
+    except Exception as e:
+        logging.error(f"Error in /force_card: {e}")
+        await update.message.reply_text("❌ Failed to draw card.")
 
 async def force_reveal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    send_card_reveal(context.application)
-    await update.message.reply_text("🔮 Card revealed.")
+    try:
+        send_card_reveal(context.application)
+        await update.message.reply_text("🔮 Card revealed.")
+        logging.info("/force_reveal used.")
+    except Exception as e:
+        logging.error(f"Error in /force_reveal: {e}")
+        await update.message.reply_text("❌ Failed to reveal card.")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -71,6 +100,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Use manual commands if the bot restarted mid-day or missed a scheduled message._",
         parse_mode="Markdown"
     )
+    logging.info("Help command served.")
 
 def setup_handlers(app):
     app.add_handler(CommandHandler("start", start))
