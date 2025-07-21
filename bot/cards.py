@@ -5,11 +5,11 @@ import logging
 from dotenv import load_dotenv
 from telegram import constants
 
-# Load chat ID
+# Load .env variables
 load_dotenv()
 CHAT_ID = int(os.getenv("CHAT_ID", "0"))
 
-# Logging setup
+# Logging configuration
 LOG_DIR = "/var/log/vision30x"
 os.makedirs(LOG_DIR, exist_ok=True)
 logging.basicConfig(
@@ -18,13 +18,13 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# File path
+# File path setup
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 CARDS_FILE = os.path.join(DATA_PATH, "cards.json")
 
 def load_cards():
     try:
-        with open(CARDS_FILE) as f:
+        with open(CARDS_FILE, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logging.error(f"Failed to load cards: {e}")
@@ -39,8 +39,8 @@ async def send_card_prompt(app):
 
         chosen = random.choice(cards)
         app.bot_data["chosen_card"] = chosen
-
         logging.info(f"Card picked: {chosen['title']}")
+
         await app.bot.send_message(CHAT_ID, "🃏 A new affirmation card has been drawn. Reflect on your day.")
     except Exception as e:
         logging.error(f"Failed to send card prompt: {e}")
@@ -50,17 +50,18 @@ async def send_card_reveal(app):
     try:
         chosen = app.bot_data.get("chosen_card")
         if not chosen:
-            await app.bot.send_message(CHAT_ID, "❌ No card has been picked yet.")
+            await app.bot.send_message(CHAT_ID, "⚠️ No card drawn yet. Use /force_card first.")
             return
 
-        text = (
+        message = (
             f"🔮 *Your Card Today:*\n\n"
             f"*{chosen['title']}*\n\n"
             f"_{chosen['message']}_\n\n"
             f"*Reflect:* {chosen['reflection']}"
         )
-        await app.bot.send_message(CHAT_ID, text, parse_mode=constants.ParseMode.MARKDOWN)
+
+        await app.bot.send_message(CHAT_ID, message, parse_mode=constants.ParseMode.MARKDOWN)
         logging.info(f"Card revealed: {chosen['title']}")
     except Exception as e:
-        logging.error(f"Failed to send card reveal: {e}")
+        logging.error(f"Failed to reveal card: {e}")
         await app.bot.send_message(CHAT_ID, "❌ Failed to reveal card.")
