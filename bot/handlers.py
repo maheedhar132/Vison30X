@@ -6,15 +6,25 @@ import pytz
 
 tz = pytz.timezone("Asia/Kolkata")
 
+# /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.chat_id
+    print(f"🆔 CHAT_ID = {user_id}")
+
     await update.message.reply_text(
-        "👋 Hello! This is **PragyaBot**, your personal evolution assistant.\n\n"
-        "I’ll send your daily manifestation bursts, visual affirmation cards, and help track your transformation."
+        f"👋 Welcome to *PragyaBot*.\n\n"
+        "I'm your personal evolution assistant.\n\n"
+        f"🆔 Your Telegram chat ID is:\n`{user_id}`\n\n"
+        "Paste this into your `.env` file as:\n\n"
+        "`CHAT_ID={user_id}`",
+        parse_mode="Markdown"
     )
 
+# /health command
 async def health(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Bot is running fine.")
+    await update.message.reply_text("✅ Bot is running and alive.")
 
+# /status command
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     manifest = context.bot_data.get("today_manifest")
     card = context.bot_data.get("chosen_card")
@@ -36,3 +46,9 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response += f"\n\n🕒 Time: {now} IST"
 
     await update.message.reply_text(response, parse_mode="Markdown")
+
+# Setup function for main.py
+def setup_handlers(app):
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("health", health))
+    app.add_handler(CommandHandler("status", status))
