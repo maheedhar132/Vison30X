@@ -1,12 +1,507 @@
 [
   {
-    "title": "RISE WITH RESOLVE",
-    "message": "🛡️ Today is a training ground.\nLean into discomfort.",
-    "prompt": "What resistance can you use as fuel today?"
+    "title": "Act Like It's Real",
+    "message": "💬 The self you act from is the one that grows. Act from belief, not for belief.",
+    "prompt": "What action today proved that you already are who you're becoming?"
   },
   {
-    "title": "ACT LIKE IT'S REAL",
-    "message": "🎯 Identity first. Proof later.\nAct from belief, not for belief.",
-    "prompt": "What action today reaffirms your future self?"
+    "title": "Silent Strength",
+    "message": "🔥 True power is self-control when no one is watching. Your discipline in solitude builds your public success.",
+    "prompt": "In what private moment today did you choose your future self over immediate gratification?"
+  },
+  {
+    "title": "Momentum > Mood",
+    "message": "⚡ Your feelings are temporary visitors. Your actions create lasting momentum toward ₹30 LPA.",
+    "prompt": "How did you honor your commitment to growth today, regardless of how you felt?"
+  },
+  {
+    "title": "Zero Compromise",
+    "message": "🎯 Compromise on standards once, and your brain learns to negotiate with excellence.",
+    "prompt": "Where did you maintain your non-negotiable standards today, especially when it felt difficult?"
+  },
+  {
+    "title": "Recovery Warrior",
+    "message": "🛡️ Every urge resisted is a victory deposited into your future success account.",
+    "prompt": "What triggered you today, and how did you respond from strength rather than weakness?"
+  },
+  {
+    "title": "Value Creator",
+    "message": "💎 Your salary is a reflection of the value you create. Think ₹30 LPA problems, solve ₹30 LPA solutions.",
+    "prompt": "What ₹30 LPA-level problem did you tackle or prepare to tackle today?"
+  },
+  {
+    "title": "Identity First",
+    "message": "🎭 You don't rise to the level of your goals; you fall to the level of your identity.",
+    "prompt": "How did you embody the identity of a ₹30 LPA professional today?"
+  },
+  {
+    "title": "Discomfort Growth",
+    "message": "🌱 Growth lives in the gap between who you are and who you're becoming.",
+    "prompt": "What uncomfortable action moved you closer to your ₹30 LPA identity today?"
+  },
+  {
+    "title": "Focus Fortress",
+    "message": "🏰 Attention is the currency of the 21st century. Protect yours like a fortress.",
+    "prompt": "What distractions did you successfully defend against today?"
+  },
+  {
+    "title": "Energy Audit",
+    "message": "⚡ Your energy determines your income. Invest it like the precious resource it is.",
+    "prompt": "Where did you invest your highest energy today, and how did it align with your ₹30 LPA goals?"
+  },
+  {
+    "title": "Pattern Break",
+    "message": "🔄 The moment you notice an old pattern is the moment you can choose a new one.",
+    "prompt": "What old pattern did you interrupt today and replace with a ₹30 LPA behavior?"
+  },
+  {
+    "title": "Emotional Master",
+    "message": "🧠 Your emotions are data, not directions. Feel them, learn from them, then choose your response.",
+    "prompt": "What emotion gave you information today, and how did you respond with wisdom?"
+  },
+  {
+    "title": "Excellence Standard",
+    "message": "⭐ Excellence is not an act but a habit. Your standards today shape your salary tomorrow.",
+    "prompt": "In what area did you raise your standard of excellence today?"
+  },
+  {
+    "title": "Future Pull",
+    "message": "🚀 Let your future self be stronger than your present excuses.",
+    "prompt": "What would the ₹30 LPA version of you be proud that you did today?"
+  },
+  {
+    "title": "Compound Daily",
+    "message": "📈 Small daily improvements compound into extraordinary yearly results.",
+    "prompt": "What 1% improvement did you make today that will compound over time?"
+  },
+  {
+    "title": "Trigger Trained",
+    "message": "🎯 Every trigger is training. Every temptation is a test of your future identity.",
+    "prompt": "How did you use today's triggers as training for your stronger future self?"
+  },
+  {
+    "title": "Worthy Now",
+    "message": "👑 You don't become worthy of success; you recognize you already are.",
+    "prompt": "What evidence did you create today that you're already worthy of ₹30 LPA success?"
+  },
+  {
+    "title": "System Builder",
+    "message": "⚙️ Systems beat motivation. Build systems that make success inevitable.",
+    "prompt": "What system did you strengthen or create today that supports your ₹30 LPA journey?"
+  },
+  {
+    "title": "Clarity Keeper",
+    "message": "🔍 Clarity of purpose cuts through the noise of distraction.",
+    "prompt": "How did your clarity of purpose guide your decisions today?"
+  },
+  {
+    "title": "Boundary Boss",
+    "message": "🚧 Strong boundaries create strong results. Say no to protect your yes.",
+    "prompt": "What boundary did you enforce today that protected your ₹30 LPA priorities?"
+  },
+  {
+    "title": "Recovery Strong",
+    "message": "💪 Your recovery is not about perfection; it's about progress and resilience.",
+    "prompt": "How did you practice recovery today, even in small ways?"
+  },
+  {
+    "title": "Impact Maker",
+    "message": "🌟 Your impact today determines your income tomorrow. Make it count.",
+    "prompt": "What significant impact did you create today that moves you toward ₹30 LPA value?"
+  },
+  {
+    "title": "Stress Master",
+    "message": "🧘 Stress is not the enemy; your response to it determines your growth.",
+    "prompt": "How did you transform stress into strength today?"
+  },
+  {
+    "title": "Time Investor",
+    "message": "⏰ Time is your most valuable asset. Invest it in ₹30 LPA activities.",
+    "prompt": "How did you invest your time today like someone earning ₹30 LPA?"
+  },
+  {
+    "title": "Vision Holder",
+    "message": "👁️ Your vision must be stronger than your current circumstances.",
+    "prompt": "How did you hold onto your ₹30 LPA vision despite today's challenges?"
+  },
+  {
+    "title": "Habit Sculptor",
+    "message": "🎨 You are the sculptor of your habits, and your habits sculpt your destiny.",
+    "prompt": "What habit did you reinforce today that shapes your ₹30 LPA future?"
+  },
+  {
+    "title": "Confidence Builder",
+    "message": "💎 Confidence is built through keeping promises to yourself, one day at a time.",
+    "prompt": "What promise to yourself did you keep today, and how did it build your confidence?"
+  },
+  {
+    "title": "Urge Surfer",
+    "message": "🌊 Urges are waves. You don't fight waves; you surf them until they pass.",
+    "prompt": "How did you surf through an urge today without being overwhelmed by it?"
+  },
+  {
+    "title": "Growth Seeker",
+    "message": "📚 Every challenge is a curriculum designed for your growth.",
+    "prompt": "What did today's challenges teach you about becoming a ₹30 LPA professional?"
+  },
+  {
+    "title": "Decision Power",
+    "message": "⚡ Every decision is a vote for the person you're becoming.",
+    "prompt": "What decisions did you make today that voted for your ₹30 LPA identity?"
+  },
+  {
+    "title": "Present Master",
+    "message": "🎯 The present moment is where your power lives. Use it wisely.",
+    "prompt": "How did you use your present moment power today to advance your goals?"
+  },
+  {
+    "title": "Resilience Core",
+    "message": "💪 Resilience is not bouncing back; it's bouncing forward stronger.",
+    "prompt": "How did you bounce forward from today's setbacks with greater strength?"
+  },
+  {
+    "title": "Value Stacker",
+    "message": "📊 Stack value daily. Your worth compounds with every skill mastered.",
+    "prompt": "What value did you add to your professional stack today?"
+  },
+  {
+    "title": "Mind Guard",
+    "message": "🛡️ Guard your mind like a fortress. What enters shapes what exits.",
+    "prompt": "What did you consciously choose to let into your mind today?"
+  },
+  {
+    "title": "Purposeful Action",
+    "message": "🎯 Every action either moves you toward or away from ₹30 LPA. Choose wisely.",
+    "prompt": "How did your actions today align with your ₹30 LPA purpose?"
+  },
+  {
+    "title": "Integrity Shield",
+    "message": "⚖️ Integrity is doing the right thing even when it costs you in the short term.",
+    "prompt": "Where did you choose integrity over convenience today?"
+  },
+  {
+    "title": "Energy Optimizer",
+    "message": "🔋 Peak performers optimize their energy, not just their time.",
+    "prompt": "How did you optimize your energy today for maximum ₹30 LPA impact?"
+  },
+  {
+    "title": "Temptation Transcender",
+    "message": "🚀 Transcend temptation by connecting to something greater than immediate pleasure.",
+    "prompt": "What greater purpose helped you transcend temptation today?"
+  },
+  {
+    "title": "Skill Sharpener",
+    "message": "🔪 Sharp skills cut through competition. What did you sharpen today?",
+    "prompt": "What skill did you sharpen today that increases your ₹30 LPA marketability?"
+  },
+  {
+    "title": "Feedback Seeker",
+    "message": "📈 Feedback is the breakfast of champions and the fuel of ₹30 LPA growth.",
+    "prompt": "What feedback did you seek or receive today that accelerates your growth?"
+  },
+  {
+    "title": "Consistency King",
+    "message": "👑 Consistency is the king of all virtues and the path to ₹30 LPA.",
+    "prompt": "How did you show up consistently today, even when motivation was low?"
+  },
+  {
+    "title": "Priority Protector",
+    "message": "🛡️ Protect your priorities like a guardian protects treasure.",
+    "prompt": "What ₹30 LPA priority did you protect from distraction today?"
+  },
+  {
+    "title": "Growth Edge",
+    "message": "⚡ Your growth edge is where comfort ends and transformation begins.",
+    "prompt": "What growth edge did you explore today that scared and excited you?"
+  },
+  {
+    "title": "Recovery Reminder",
+    "message": "🌅 Each day in recovery is a victory that builds your strongest future.",
+    "prompt": "How did you honor your recovery journey today?"
+  },
+  {
+    "title": "Value Communicator",
+    "message": "📢 ₹30 LPA professionals communicate their value clearly and confidently.",
+    "prompt": "How did you communicate your value today in your work or relationships?"
+  },
+  {
+    "title": "Discipline Devotee",
+    "message": "🙏 Discipline is devotion to your future self's success.",
+    "prompt": "How did your discipline today demonstrate devotion to your ₹30 LPA future?"
+  },
+  {
+    "title": "Momentum Creator",
+    "message": "🎯 Create momentum through small wins that build into breakthrough success.",
+    "prompt": "What small win today created momentum toward your bigger goals?"
+  },
+  {
+    "title": "Emotional Alchemist",
+    "message": "⚗️ Transform negative emotions into fuel for positive action.",
+    "prompt": "What challenging emotion did you transform into productive energy today?"
+  },
+  {
+    "title": "Standard Setter",
+    "message": "📏 The standards you set for yourself become the standards others set for your salary.",
+    "prompt": "What standard did you set or maintain today that reflects ₹30 LPA excellence?"
+  },
+  {
+    "title": "Challenge Crusher",
+    "message": "💥 Challenges are not roadblocks; they're building blocks for your ₹30 LPA foundation.",
+    "prompt": "How did you use today's challenge as a building block for your success?"
+  },
+  {
+    "title": "Focus Fighter",
+    "message": "⚔️ Fight for your focus like your future depends on it—because it does.",
+    "prompt": "What did you do today to fight for and maintain your focus on what matters most?"
+  },
+  {
+    "title": "Identity Anchor",
+    "message": "⚓ Anchor your identity to your values, not your circumstances.",
+    "prompt": "How did your core identity remain stable despite today's changing circumstances?"
+  },
+  {
+    "title": "Opportunity Optimizer",
+    "message": "🎯 Optimize every opportunity as if it's a stepping stone to ₹30 LPA.",
+    "prompt": "What opportunity did you optimize today that could accelerate your career growth?"
+  },
+  {
+    "title": "Weakness Warrior",
+    "message": "⚔️ Face your weaknesses with the courage of a warrior building strength.",
+    "prompt": "What weakness did you courageously work on today?"
+  },
+  {
+    "title": "Network Builder",
+    "message": "🌐 Your network determines your net worth. Build relationships that build your future.",
+    "prompt": "How did you invest in a relationship today that supports your ₹30 LPA journey?"
+  },
+  {
+    "title": "Clarity Creator",
+    "message": "💎 Clarity is the foundation of all achievement. Get clear, stay clear.",
+    "prompt": "What did you do today to create greater clarity about your ₹30 LPA path?"
+  },
+  {
+    "title": "Addiction Breaker",
+    "message": "⛓️ Every chain of addiction is broken one link at a time, one day at a time.",
+    "prompt": "What link in the chain of old patterns did you break today?"
+  },
+  {
+    "title": "Excellence Embracer",
+    "message": "🏆 Excellence is a choice you make in each moment, not a destination you reach.",
+    "prompt": "In what moment today did you choose excellence over mediocrity?"
+  },
+  {
+    "title": "Future Builder",
+    "message": "🏗️ You are the architect of your future. Every action today is a building block.",
+    "prompt": "What building block did you add to your ₹30 LPA future today?"
+  },
+  {
+    "title": "Trigger Transformer",
+    "message": "🔄 Transform triggers from weakness activators into strength amplifiers.",
+    "prompt": "How did you transform a trigger today into an opportunity for growth?"
+  },
+  {
+    "title": "Impact Amplifier",
+    "message": "📈 Amplify your impact by focusing on results that matter most.",
+    "prompt": "What result did you create today that amplifies your professional impact?"
+  },
+  {
+    "title": "Decision Architect",
+    "message": "🏛️ Architect your life through the accumulated power of daily decisions.",
+    "prompt": "What decision today was worthy of someone earning ₹30 LPA?"
+  },
+  {
+    "title": "Resilience Reservoir",
+    "message": "🏞️ Build your resilience reservoir through daily deposits of strength and courage.",
+    "prompt": "What deposit did you make into your resilience reservoir today?"
+  },
+  {
+    "title": "Progress Tracker",
+    "message": "📊 Track progress, not perfection. Every step forward counts.",
+    "prompt": "What measurable progress did you make today toward your ₹30 LPA goal?"
+  },
+  {
+    "title": "Vision Keeper",
+    "message": "🔮 Keep your vision alive when the path seems unclear. Clarity comes through action.",
+    "prompt": "How did you keep your ₹30 LPA vision alive today, especially during challenging moments?"
+  },
+  {
+    "title": "Self-Worth Warrior",
+    "message": "👑 Your self-worth is not negotiable. Protect it, nurture it, honor it.",
+    "prompt": "How did you honor your self-worth today in your actions and choices?"
+  },
+  {
+    "title": "Habit Engineer",
+    "message": "⚙️ Engineer habits that engineer success. Design your days to design your destiny.",
+    "prompt": "What habit did you engineer or strengthen today that designs your ₹30 LPA destiny?"
+  },
+  {
+    "title": "Energy Guardian",
+    "message": "🛡️ Guard your energy as fiercely as you guard your money—it's equally valuable.",
+    "prompt": "How did you guard and invest your energy today like a ₹30 LPA professional?"
+  },
+  {
+    "title": "Breakthrough Believer",
+    "message": "💥 Believe in breakthrough even when you can only see the next step.",
+    "prompt": "What did you do today that demonstrated belief in your eventual ₹30 LPA breakthrough?"
+  },
+  {
+    "title": "Distraction Defeater",
+    "message": "⚔️ Defeat distraction by making your purpose more compelling than pleasure.",
+    "prompt": "How did your compelling purpose help you defeat distraction today?"
+  },
+  {
+    "title": "Value Validator",
+    "message": "✅ Validate your value through consistent high-quality output and results.",
+    "prompt": "What high-quality output did you create today that validates your ₹30 LPA potential?"
+  },
+  {
+    "title": "Growth Accelerator",
+    "message": "🚀 Accelerate growth by seeking discomfort and embracing challenge.",
+    "prompt": "What discomfort did you embrace today that accelerates your professional growth?"
+  },
+  {
+    "title": "Mind Sculptor",
+    "message": "🎨 Sculpt your mind daily through the thoughts you choose to entertain.",
+    "prompt": "What empowering thoughts did you choose to sculpt your mind today?"
+  },
+  {
+    "title": "Recovery Champion",
+    "message": "🏆 Champion your recovery by celebrating every victory, no matter how small.",
+    "prompt": "What recovery victory, big or small, did you achieve today?"
+  },
+  {
+    "title": "Success Magnetizer",
+    "message": "🧲 Magnetize success by consistently embodying the qualities of your desired outcome.",
+    "prompt": "What qualities of a ₹30 LPA professional did you embody today?"
+  },
+  {
+    "title": "Temptation Terminator",
+    "message": "🛡️ Terminate temptation by having a stronger vision than the temporary pleasure.",
+    "prompt": "What stronger vision helped you terminate temptation today?"
+  },
+  {
+    "title": "Opportunity Creator",
+    "message": "✨ Create opportunities through preparation meeting the right moment.",
+    "prompt": "How did your preparation today position you to create or seize opportunities?"
+  },
+  {
+    "title": "Discipline Developer",
+    "message": "💪 Develop discipline like a muscle—through consistent, progressive resistance.",
+    "prompt": "What resistance did you push through today that developed your discipline muscle?"
+  },
+  {
+    "title": "Legacy Builder",
+    "message": "🏗️ Build a legacy through the compound effect of daily excellence.",
+    "prompt": "What did you do today that contributes to the legacy you want to leave?"
+  },
+  {
+    "title": "Pattern Master",
+    "message": "🎭 Master your patterns by becoming conscious of them and choosing better ones.",
+    "prompt": "What pattern did you master or improve today?"
+  },
+  {
+    "title": "Strength Stacker",
+    "message": "💪 Stack strengths daily. Every skill mastered multiplies your market value.",
+    "prompt": "What strength did you stack today that multiplies your ₹30 LPA potential?"
+  },
+  {
+    "title": "Victory Validator",
+    "message": "🏆 Validate every victory to build the confidence that builds your career.",
+    "prompt": "What victory did you achieve today, and how does it validate your capabilities?"
+  },
+  {
+    "title": "Focus Fortress",
+    "message": "🏰 Build a fortress of focus around your most important objectives.",
+    "prompt": "What fortress of focus did you build today around your ₹30 LPA objectives?"
+  },
+  {
+    "title": "Identity Investor",
+    "message": "💎 Invest in identity-congruent actions that compound into character.",
+    "prompt": "What investment in your identity did you make today through your actions?"
+  },
+  {
+    "title": "Excellence Executor",
+    "message": "⚡ Execute with excellence even in small tasks—it builds the habit of greatness.",
+    "prompt": "What small task did you execute with excellence today?"
+  },
+  {
+    "title": "Breakthrough Builder",
+    "message": "🔨 Build breakthroughs one persistent action at a time.",
+    "prompt": "What persistent action did you take today that builds toward your breakthrough?"
+  },
+  {
+    "title": "Wisdom Warrior",
+    "message": "🧠 Warrior wisdom comes from learning from both victories and defeats.",
+    "prompt": "What wisdom did you extract from today's experiences?"
+  },
+  {
+    "title": "Purpose Protector",
+    "message": "🛡️ Protect your purpose from the noise of other people's priorities.",
+    "prompt": "How did you protect your ₹30 LPA purpose from distractions today?"
+  },
+  {
+    "title": "Recovery Reinforcer",
+    "message": "💪 Reinforce recovery through consistent choices that honor your health and future.",
+    "prompt": "What choice today reinforced your recovery and honored your future?"
+  },
+  {
+    "title": "Impact Investor",
+    "message": "📈 Invest your efforts in activities that create lasting, measurable impact.",
+    "prompt": "What lasting impact did you invest in creating today?"
+  },
+  {
+    "title": "Standard Guardian",
+    "message": "⚖️ Guard your standards like they determine your destiny—because they do.",
+    "prompt": "What standard did you guard today that shapes your ₹30 LPA destiny?"
+  },
+  {
+    "title": "Growth Guarantor",
+    "message": "📈 Guarantee growth by making it your non-negotiable daily commitment.",
+    "prompt": "How did you guarantee growth today through your non-negotiable commitments?"
+  },
+  {
+    "title": "Future Financier",
+    "message": "💰 Finance your future by investing present efforts in ₹30 LPA activities.",
+    "prompt": "What investment did you make today that finances your ₹30 LPA future?"
+  },
+  {
+    "title": "Discipline Director",
+    "message": "🎬 Direct your life with discipline as your leading character.",
+    "prompt": "How did discipline direct your choices today?"
+  },
+  {
+    "title": "Success Sculptor",
+    "message": "🎨 Sculpt success through the daily refinement of your thoughts, words, and actions.",
+    "prompt": "What refinement did you make today in sculpting your success?"
+  },
+  {
+    "title": "Momentum Multiplier",
+    "message": "⚡ Multiply momentum by stacking small consistent wins.",
+    "prompt": "What small win today multiplied your momentum toward ₹30 LPA?"
+  },
+  {
+    "title": "Challenge Champion",
+    "message": "🏆 Champion challenges as opportunities wearing work clothes.",
+    "prompt": "What challenge did you champion today that revealed an opportunity?"
+  },
+  {
+    "title": "Integrity Guardian",
+    "message": "⚖️ Guard your integrity as the foundation of all lasting success.",
+    "prompt": "How did you guard your integrity today in a way that builds lasting success?"
+  },
+  {
+    "title": "Vision Validator",
+    "message": "👁️ Validate your vision through actions that prove you believe in it.",
+    "prompt": "What action today validated your belief in your ₹30 LPA vision?"
+  },
+  {
+    "title": "Excellence Amplifier",
+    "message": "📢 Amplify excellence by making it your default response to any situation.",
+    "prompt": "In what situation today did you choose excellence as your default response?"
+  },
+  {
+    "title": "Potential Maximizer",
+    "message": "🚀 Maximize potential by pushing past the point where others quit.",
+    "prompt": "Where did you push past your comfort zone today to maximize your potential?"
   }
 ]
