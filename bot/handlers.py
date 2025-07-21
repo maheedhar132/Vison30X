@@ -1,9 +1,11 @@
-from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
-from datetime import datetime
-import pytz
+import asyncio
 import logging
 import os
+from datetime import datetime
+
+import pytz
+from telegram import Update
+from telegram.ext import CommandHandler, ContextTypes
 
 from bot.manifestation import send_manifestation
 from bot.cards import send_card_prompt, send_card_reveal
@@ -64,7 +66,7 @@ async def force_manifest(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def force_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        send_card_prompt(context.application)
+        asyncio.create_task(send_card_prompt(context.application))
         await update.message.reply_text("🃏 Card prompt sent.")
         logging.info("/force_card used.")
     except Exception as e:
@@ -79,7 +81,7 @@ async def force_reveal(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logging.warning("/force_reveal used without drawing card first.")
             return
 
-        send_card_reveal(context.application)
+        asyncio.create_task(send_card_reveal(context.application))
         await update.message.reply_text("🔮 Card revealed.")
         logging.info("/force_reveal executed.")
     except Exception as e:
