@@ -44,9 +44,9 @@ async def send_card_prompt(app):
 
         chosen = random.choice(cards)
         app.bot_data["chosen_card"] = chosen
-        logging.info(f"Card picked: {chosen['title']}")
+        logging.info(f"Card picked: {chosen.get('title', 'N/A')}")
         logging.info(f"Chosen card full structure: {json.dumps(chosen, indent=2)}")
-        print(f"[DEBUG] Card picked: {chosen['title']}")
+        print(f"[DEBUG] Card picked: {chosen.get('title', 'N/A')}")
         print(f"[DEBUG] Full card: {json.dumps(chosen, indent=2)}")
 
         await app.bot.send_message(CHAT_ID, "🃏 A new affirmation card has been drawn. Reflect on your day.")
@@ -61,15 +61,13 @@ async def send_card_reveal(app):
             await app.bot.send_message(CHAT_ID, "⚠️ No card drawn yet. Use /force_card first.")
             return
 
-        # Validate keys
-        required_keys = ["title", "message", "reflection"]
-        for key in required_keys:
-            if key not in chosen:
-                raise KeyError(f"Missing key in chosen_card: '{key}'")
+        title = chosen.get("title", "").strip()
+        message_text = chosen.get("message", "").strip()
+        reflection = chosen.get("reflection") or chosen.get("prompt", "")
+        reflection = reflection.strip()
 
-        title = chosen["title"].strip()
-        message_text = chosen["message"].strip()
-        reflection = chosen["reflection"].strip()
+        if not all([title, message_text, reflection]):
+            raise ValueError("Missing one or more required card fields: title, message, reflection/prompt")
 
         message_lines = wrap_text_block(message_text)
         reflection_lines = wrap_text_block(reflection)
