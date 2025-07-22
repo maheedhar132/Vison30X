@@ -4,7 +4,7 @@ from datetime import datetime
 import pytz
 import logging
 import os
-
+import traceback
 from bot.manifestation import send_manifestation
 from bot.cards import send_card_prompt, send_card_reveal
 
@@ -83,7 +83,8 @@ async def force_reveal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🔮 Card revealed.")
         logging.info("/force_reveal executed.")
     except Exception as e:
-        logging.error(f"Error in /force_reveal: {e}")
+        tb = traceback.format_exc()
+        logging.error(f"Error in /force_reveal: {e}\n{tb}")
         await update.message.reply_text("❌ Failed to reveal card.")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
