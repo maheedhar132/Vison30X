@@ -18,8 +18,8 @@ logging.basicConfig(
 )
 
 # File path setup
-DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
-CARDS_FILE = os.path.join(DATA_PATH, "cards.json")
+DATA_PATH = os.path.dirname(__file__)
+CARDS_FILE = os.path.join(DATA_PATH, "data", "cards.json")
 
 def load_cards():
     try:
@@ -29,11 +29,23 @@ def load_cards():
         logging.error(f"Failed to load cards: {e}")
         return []
 
-def wrap_text_block(text, width=42):
+def wrap_text_block(text, width):
     """Wrap text to fixed-width lines for box formatting."""
     import textwrap
     lines = textwrap.wrap(text, width)
     return [line.ljust(width) for line in lines]
+
+def calculate_dynamic_width(title, message, reflection, base_width=42, padding=4):
+    """Determine max width needed for the box content."""
+    import textwrap
+    candidates = (
+        [title]
+        + textwrap.wrap(message, base_width)
+        + textwrap.wrap(reflection, base_width)
+        + ["Reflect:"]
+    )
+    max_line = max((len(line) for line in candidates), default=base_width)
+    return max(base_width, min(max_line + padding, 80))  # Cap at 80 for safety
 
 async def send_card_prompt(app):
     try:
@@ -69,23 +81,26 @@ async def send_card_reveal(app):
         if not all([title, message_text, reflection]):
             raise ValueError("Missing one or more required card fields: title, message, reflection/prompt")
 
-        message_lines = wrap_text_block(message_text)
-        reflection_lines = wrap_text_block(reflection)
+        # Dynamically determine box width
+        box_width = calculate_dynamic_width(title, message_text, reflection)
+        message_lines = wrap_text_block(message_text, box_width)
+        reflection_lines = wrap_text_block(reflection, box_width)
+        border = "─" * (box_width + 2)
 
         card_lines = [
-            "┌────────────────────────────────────────────┐",
-            "│              YOUR CARD TODAY              │",
-            "├────────────────────────────────────────────┤",
-            f"│ {title.center(42)} │",
-            "├────────────────────────────────────────────┤",
+            f"┌{border}┐",
+            f"│ {'YOUR CARD TODAY'.center(box_width)} │",
+            f"├{border}┤",
+            f"│ {title.center(box_width)} │",
+            f"├{border}┤",
         ]
         for line in message_lines:
             card_lines.append(f"│ {line} │")
-        card_lines.append("├────────────────────────────────────────────┤")
-        card_lines.append("│ Reflect:                                   │")
+        card_lines.append(f"├{border}┤")
+        card_lines.append(f"│ {'Reflect:'.ljust(box_width)} │")
         for line in reflection_lines:
             card_lines.append(f"│ {line} │")
-        card_lines.append("└────────────────────────────────────────────┘")
+        card_lines.append(f"└{border}┘")
 
         card_text = "\n".join(card_lines)
 
