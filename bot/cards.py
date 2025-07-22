@@ -2,6 +2,7 @@ import os
 import json
 import random
 import logging
+import textwrap
 from dotenv import load_dotenv
 from telegram import constants
 
@@ -46,6 +47,12 @@ async def send_card_prompt(app):
         logging.error(f"Failed to send card prompt: {e}")
         await app.bot.send_message(CHAT_ID, "❌ Failed to send card prompt.")
 
+def wrap_text_block(text, width=42, max_lines=5):
+    lines = textwrap.wrap(text.strip(), width=width)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines - 1] + ['...']
+    return [line.ljust(width) for line in lines]
+
 async def send_card_reveal(app):
     try:
         chosen = app.bot_data.get("chosen_card")
@@ -53,15 +60,32 @@ async def send_card_reveal(app):
             await app.bot.send_message(CHAT_ID, "⚠️ No card drawn yet. Use /force_card first.")
             return
 
-        message = (
-            f"🔮 *Your Card Today:*\n\n"
-            f"*{chosen['title']}*\n\n"
-            f"_{chosen['message']}_\n\n"
-            f"*Reflect:* {chosen['reflection']}"
-        )
+        title = chosen["title"].strip()
+        message_text = chosen["message"].strip()
+        reflection = chosen["reflection"].strip()
 
-        await app.bot.send_message(CHAT_ID, message, parse_mode=constants.ParseMode.MARKDOWN)
-        logging.info(f"Card revealed: {chosen['title']}")
+        message_lines = wrap_text_block(message_text)
+        reflection_lines = wrap_text_block(reflection)
+
+        card_lines = [
+            "┌────────────────────────────────────────────┐",
+            "│              YOUR CARD TODAY              │",
+            "├────────────────────────────────────────────┤",
+            f"│ {title.center(42)} │",
+            "├────────────────────────────────────────────┤",
+        ]
+        for line in message_lines:
+            card_lines.append(f"│ {line} │")
+        card_lines.append("├────────────────────────────────────────────┤")
+        card_lines.append("│ Reflect:                                   │")
+        for line in reflection_lines:
+            card_lines.append(f"│ {line} │")
+        card_lines.append("└────────────────────────────────────────────┘")
+
+        card_text = "\n".join(card_lines)
+
+        await app.bot.send_message(CHAT_ID, card_text)
+        logging.info(f"Card revealed: {title}")
     except Exception as e:
-        logging.error(f"Failed to reveal card: {e}")
+        logging.exception("Failed to reveal card")
         await app.bot.send_message(CHAT_ID, "❌ Failed to reveal card.")
