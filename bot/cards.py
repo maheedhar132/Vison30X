@@ -4,6 +4,7 @@ import random
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
+import textwrap
 
 # Load .env variables
 load_dotenv()
@@ -31,12 +32,10 @@ def load_cards():
         return []
 
 def wrap_text_block(text, width):
-    import textwrap
     lines = textwrap.wrap(text, width)
     return [line.ljust(width) for line in lines]
 
 def calculate_dynamic_width(title, message, reflection, base_width=42, padding=4):
-    import textwrap
     candidates = (
         [title]
         + textwrap.wrap(message, base_width)
@@ -94,11 +93,18 @@ async def send_card_reveal(app):
         if not all([title, message_text, reflection]):
             raise ValueError("Missing one or more required card fields: title, message, reflection/prompt")
 
-        # Set fixed width for consistent formatting on mobile
         box_width = 30
-        message_lines = wrap_text_block(f"💎 {message_text}", box_width)
-        reflection_lines = wrap_text_block(f"🪞 {reflection}", box_width)
         border = "─" * (box_width + 2)
+
+        # Strip emoji from the start and store separately
+        message_emoji = message_text[0] if ord(message_text[0]) > 127 else ""
+        reflection_emoji = reflection[0] if ord(reflection[0]) > 127 else ""
+
+        message_clean = message_text[1:].strip() if message_emoji else message_text
+        reflection_clean = reflection[1:].strip() if reflection_emoji else reflection
+
+        message_lines = wrap_text_block(message_clean, box_width)
+        reflection_lines = wrap_text_block(reflection_clean, box_width)
 
         card_lines = [
             f"┌{border}┐",
@@ -107,11 +113,21 @@ async def send_card_reveal(app):
             f"│ 🔖 {title.ljust(box_width - 3)} │",
             f"├{border}┤",
         ]
+
+        # Emoji on its own line for message block
+        if message_emoji:
+            card_lines.append(f"{message_emoji}")
         for line in message_lines:
             card_lines.append(f"│ {line} │")
+
         card_lines.append(f"├{border}┤")
+
+        # Emoji on its own line for reflection block
+        if reflection_emoji:
+            card_lines.append(f"{reflection_emoji}")
         for line in reflection_lines:
             card_lines.append(f"│ {line} │")
+
         card_lines.append(f"└{border}┘")
 
         card_text = "\n".join(card_lines)
