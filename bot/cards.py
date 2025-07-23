@@ -2,6 +2,7 @@ import os
 import json
 import random
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Load .env variables
@@ -30,13 +31,11 @@ def load_cards():
         return []
 
 def wrap_text_block(text, width):
-    """Wrap text to fixed-width lines for box formatting."""
     import textwrap
     lines = textwrap.wrap(text, width)
     return [line.ljust(width) for line in lines]
 
 def calculate_dynamic_width(title, message, reflection, base_width=42, padding=4):
-    """Determine max width needed for the box content."""
     import textwrap
     candidates = (
         [title]
@@ -45,23 +44,36 @@ def calculate_dynamic_width(title, message, reflection, base_width=42, padding=4
         + ["Reflect:"]
     )
     max_line = max((len(line) for line in candidates), default=base_width)
-    return max(base_width, min(max_line + padding, 80))  # Cap at 80 for safety
+    return max(base_width, min(max_line + padding, 80))
+
+# Cache for daily picked card
+_cached_card_day = None
+_cached_card = None
 
 async def send_card_prompt(app):
-    try:
-        cards = load_cards()
-        if not cards:
-            await app.bot.send_message(CHAT_ID, "❌ No cards found.")
-            return
+    global _cached_card_day, _cached_card
 
-        chosen = random.choice(cards)
-        app.bot_data["chosen_card"] = chosen
-        logging.info(f"Card picked: {chosen.get('title', 'N/A')}")
-        logging.info(f"Chosen card full structure: {json.dumps(chosen, indent=2)}")
-        print(f"[DEBUG] Card picked: {chosen.get('title', 'N/A')}")
-        print(f"[DEBUG] Full card: {json.dumps(chosen, indent=2)}")
+    try:
+        today = datetime.now().date()
+
+        # Only pick once per day
+        if _cached_card_day != today:
+            cards = load_cards()
+            if not cards:
+                await app.bot.send_message(CHAT_ID, "❌ No cards found.")
+                return
+
+            _cached_card = random.choice(cards)
+            _cached_card_day = today
+            logging.info(f"Card picked: {json.dumps(_cached_card, indent=2)}")
+
+        app.bot_data["chosen_card"] = _cached_card
+
+        print(f"[DEBUG] Card picked: {_cached_card.get('title', 'N/A')}")
+        print(f"[DEBUG] Full card: {json.dumps(_cached_card, indent=2)}")
 
         await app.bot.send_message(CHAT_ID, "🃏 A new affirmation card has been drawn. Reflect on your day.")
+
     except Exception as e:
         logging.error(f"Failed to send card prompt: {e}")
         await app.bot.send_message(CHAT_ID, "❌ Failed to send card prompt.")
@@ -69,6 +81,7 @@ async def send_card_prompt(app):
 async def send_card_reveal(app):
     try:
         chosen = app.bot_data.get("chosen_card")
+
         if not chosen:
             await app.bot.send_message(CHAT_ID, "⚠️ No card drawn yet. Use /force_card first.")
             return
@@ -81,7 +94,6 @@ async def send_card_reveal(app):
         if not all([title, message_text, reflection]):
             raise ValueError("Missing one or more required card fields: title, message, reflection/prompt")
 
-        # Dynamically determine box width
         box_width = calculate_dynamic_width(title, message_text, reflection)
         message_lines = wrap_text_block(message_text, box_width)
         reflection_lines = wrap_text_block(reflection, box_width)
@@ -107,6 +119,7 @@ async def send_card_reveal(app):
         logging.info(f"Card revealed: {title}")
         print(f"[DEBUG] Revealed card:\n{card_text}")
         await app.bot.send_message(CHAT_ID, card_text)
+
     except Exception as e:
         logging.exception("Failed to reveal card")
         print(f"[ERROR] Reveal failed: {e}")

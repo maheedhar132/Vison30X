@@ -2,77 +2,83 @@ import os
 import json
 import random
 import logging
-from dotenv import load_dotenv
+from datetime import datetime
+from pathlib import Path
 
-# Load .env values
-load_dotenv()
-CHAT_ID = int(os.getenv("CHAT_ID", "0"))
+from telegram import Bot
 
-# Logging setup
-LOG_DIR = "/var/log/vision30x"
-os.makedirs(LOG_DIR, exist_ok=True)
-logging.basicConfig(
-    filename=os.path.join(LOG_DIR, "bot.log"),
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+# Constants
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+MANIFESTATIONS_FILE = DATA_DIR / "manifestations.json"
+USED_FILE = DATA_DIR / "used_manifestations.json"
 
-# File paths
-DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
-MANIFEST_FILE = os.path.join(DATA_PATH, "manifestations.json")
-USED_FILE = os.path.join(DATA_PATH, "used_manifest_ids.json")
+# Ensure directory exists
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+# Load manifestation data
 def load_manifestations():
     try:
-        with open(MANIFEST_FILE) as f:
+        with open(MANIFESTATIONS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        logging.error(f"Failed to load manifestations: {e}")
+        logging.error(f"[Manifestation] Failed to load manifestations: {e}")
         return []
 
-def get_used_ids():
-    if not os.path.exists(USED_FILE):
-        return []
+def load_used_ids():
+    if not USED_FILE.exists():
+        return set()
     try:
-        with open(USED_FILE) as f:
-            return json.load(f)
+        with open(USED_FILE, "r", encoding="utf-8") as f:
+            return set(json.load(f))
     except Exception as e:
-        logging.error(f"Failed to read used_manifest_ids.json: {e}")
-        return []
+        logging.warning(f"[Manifestation] Failed to load used_manifestations: {e}")
+        return set()
 
-def save_used_id(mid):
+def save_used_ids(used_ids):
     try:
-        used = get_used_ids()
-        used.append(mid)
-        with open(USED_FILE, "w") as f:
-            json.dump(used, f)
+        with open(USED_FILE, "w", encoding="utf-8") as f:
+            json.dump(sorted(list(used_ids)), f, indent=2)
     except Exception as e:
-        logging.error(f"Failed to save used manifest ID: {e}")
+        logging.error(f"[Manifestation] Failed to save used_manifestations: {e}")
 
-def pick_new_manifest():
-    all_m = load_manifestations()
-    used = get_used_ids()
-    available = [m for m in all_m if m["id"] not in used]
-    if not available:
-        logging.warning("No new manifestations left. Reusing from old.")
-        return random.choice(all_m) if all_m else None
-    chosen = random.choice(available)
-    save_used_id(chosen["id"])
-    logging.info(f"Picked new manifestation ID: {chosen['id']}")
+# Pick a new manifestation
+def pick_new_manifestation(manifestations, used_ids):
+    unused = [m for m in manifestations if m["id"] not in used_ids]
+    if not unused:
+        logging.warning("[Manifestation] All manifestations used. Resetting the list.")
+        used_ids.clear()
+        unused = manifestations
+
+    chosen = random.choice(unused)
+    used_ids.add(chosen["id"])
+    save_used_ids(used_ids)
     return chosen
 
+# Global cache to avoid repeated picks per day
+_cached_today = None
+_cached_manifestation = None
+
+def get_today_manifestation():
+    global _cached_today, _cached_manifestation
+    today = datetime.now().date()
+
+    if _cached_today != today:
+        manifestations = load_manifestations()
+        used_ids = load_used_ids()
+        _cached_manifestation = pick_new_manifestation(manifestations, used_ids)
+        _cached_today = today
+
+    return _cached_manifestation
+
+# Bot entrypoint (used in scheduler)
 async def send_manifestation(app, index):
     try:
-        manifest = app.bot_data.get("today_manifest")
-        if not manifest:
-            manifest = pick_new_manifest()
-            app.bot_data["today_manifest"] = manifest
-
-        if manifest:
-            text = manifest['set'][index]
-            await app.bot.send_message(CHAT_ID, text=f"🌅 Manifestation:\n\n{text}")
-            logging.info(f"Sent manifestation {index + 1}/3: {text[:40]}...")
-        else:
-            logging.error("No valid manifestation to send.")
+        manifestation = get_today_manifestation()
+        line = manifestation["set"][index]
+        message = f"🌅 Manifestation:\n\n{line}"
+        await app.bot.send_message(chat_id=int(os.getenv("CHAT_ID")), text=message)
+        logging.info(f"[Manifestation] Sent index {index} from ID {manifestation['id']}")
     except Exception as e:
-        logging.error(f"Error sending manifestation {index + 1}: {e}")
+        logging.exception(f"[Manifestation] Failed to send manifestation: {e}")
+        await app.bot.send_message(chat_id=int(os.getenv("CHAT_ID")), text="❌ Failed to send manifestation.")
