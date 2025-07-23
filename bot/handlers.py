@@ -5,6 +5,9 @@ import pytz
 import logging
 import os
 import traceback
+
+from bot import manifestation as manifestation_module
+from bot import cards as cards_module
 from bot.manifestation import send_manifestation
 from bot.cards import send_card_prompt, send_card_reveal
 
@@ -87,6 +90,31 @@ async def force_reveal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error(f"Error in /force_reveal: {e}\n{tb}")
         await update.message.reply_text("❌ Failed to reveal card.")
 
+async def clear_cache(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        # Clear in-memory cache from manifestation.py
+        manifestation_module._cached_today = None
+        manifestation_module._cached_manifestation = None
+
+        # Clear in-memory cache from cards.py
+        cards_module._cached_card_day = None
+        cards_module._cached_card = None
+
+        # Delete used_manifestations.json if it exists
+        used_file = manifestation_module.USED_FILE
+        if used_file.exists():
+            used_file.unlink()
+            logging.info("[/clear_cache] Deleted used_manifestations.json.")
+        else:
+            logging.info("[/clear_cache] No used_manifestations.json to delete.")
+
+        await update.message.reply_text("♻️ Cache and used manifestations have been cleared.")
+        logging.info("/clear_cache executed successfully.")
+
+    except Exception as e:
+        logging.error(f"[/clear_cache] Error clearing cache: {e}")
+        await update.message.reply_text("❌ Failed to clear cache.")
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = (
         "🧠 Vision30X Bot Help\n\n"
@@ -101,6 +129,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /force_manifest — Send all 3 manifestations now\n"
         "• /force_card — Pick a card immediately (kept hidden)\n"
         "• /force_reveal — Reveal the current card\n"
+        "• /clear_cache — Clear today's manifestation/card + usage history\n"
         "• /status — See today’s manifest and card\n"
         "• /health — Ping the bot to check if it’s running\n"
         "• /start — Show your Telegram CHAT_ID for .env setup\n"
@@ -117,4 +146,5 @@ def setup_handlers(app):
     app.add_handler(CommandHandler("force_manifest", force_manifest))
     app.add_handler(CommandHandler("force_card", force_card))
     app.add_handler(CommandHandler("force_reveal", force_reveal))
+    app.add_handler(CommandHandler("clear_cache", clear_cache))  # ✅ Added here
     app.add_handler(CommandHandler("help", help_command))

@@ -94,22 +94,22 @@ async def send_card_reveal(app):
         if not all([title, message_text, reflection]):
             raise ValueError("Missing one or more required card fields: title, message, reflection/prompt")
 
-        box_width = calculate_dynamic_width(title, message_text, reflection)
-        message_lines = wrap_text_block(message_text, box_width)
-        reflection_lines = wrap_text_block(reflection, box_width)
+        # Set fixed width for consistent formatting on mobile
+        box_width = 30
+        message_lines = wrap_text_block(f"💎 {message_text}", box_width)
+        reflection_lines = wrap_text_block(f"🪞 {reflection}", box_width)
         border = "─" * (box_width + 2)
 
         card_lines = [
             f"┌{border}┐",
-            f"│ {'YOUR CARD TODAY'.center(box_width)} │",
+            f"│ {'🌟 YOUR CARD TODAY'.center(box_width)} │",
             f"├{border}┤",
-            f"│ {title.center(box_width)} │",
+            f"│ 🔖 {title.ljust(box_width - 3)} │",
             f"├{border}┤",
         ]
         for line in message_lines:
             card_lines.append(f"│ {line} │")
         card_lines.append(f"├{border}┤")
-        card_lines.append(f"│ {'Reflect:'.ljust(box_width)} │")
         for line in reflection_lines:
             card_lines.append(f"│ {line} │")
         card_lines.append(f"└{border}┘")
