@@ -10,6 +10,7 @@ from bot import manifestation as manifestation_module
 from bot import cards as cards_module
 from bot.manifestation import send_manifestation
 from bot.cards import send_card_prompt, send_card_reveal
+from bot.manifestation_for_her import send_manifestation_for_her  # ✅ NEW IMPORT
 
 tz = pytz.timezone("Asia/Kolkata")
 
@@ -64,6 +65,18 @@ async def force_manifest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logging.error(f"Error in /force_manifest: {e}")
         await update.message.reply_text("❌ Failed to send manifestations.")
+
+# ✅ NEW HANDLER for her
+async def force_manifest_her(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("⏱ Sending 3 manifestations for her...")
+    logging.info("Manual trigger: /force_manifest_her")
+    try:
+        for i in range(3):
+            await send_manifestation_for_her(context.application, i)
+        logging.info("All 3 manifestations for her sent manually.")
+    except Exception as e:
+        logging.error(f"Error in /force_manifest_her: {e}")
+        await update.message.reply_text("❌ Failed to send manifestations for her.")
 
 async def force_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -127,6 +140,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• 7:00 PM - Card revealed with reflection\n\n"
         "🛠 Manual Commands:\n"
         "• /force_manifest — Send all 3 manifestations now\n"
+        "• /force_manifest_her — Send all 3 manifestations for her now\n"
         "• /force_card — Pick a card immediately (kept hidden)\n"
         "• /force_reveal — Reveal the current card\n"
         "• /clear_cache — Clear today's manifestation/card + usage history\n"
@@ -144,7 +158,8 @@ def setup_handlers(app):
     app.add_handler(CommandHandler("health", health))
     app.add_handler(CommandHandler("status", status))
     app.add_handler(CommandHandler("force_manifest", force_manifest))
+    app.add_handler(CommandHandler("force_manifest_her", force_manifest_her))  # ✅ NEW
     app.add_handler(CommandHandler("force_card", force_card))
     app.add_handler(CommandHandler("force_reveal", force_reveal))
-    app.add_handler(CommandHandler("clear_cache", clear_cache))  # ✅ Added here
+    app.add_handler(CommandHandler("clear_cache", clear_cache))
     app.add_handler(CommandHandler("help", help_command))
