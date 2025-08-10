@@ -4,7 +4,6 @@ import random
 import logging
 from datetime import datetime
 from pathlib import Path
-from telegram import Bot
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -18,7 +17,7 @@ def load_manifestations():
         with open(MANIFESTATIONS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        logging.error(f"[ManifestationHer] Failed to load: {e}")
+        logging.error(f"[ManifestationHer] Failed to load: {e}", exc_info=True)
         return []
 
 def load_used_ids():
@@ -27,7 +26,8 @@ def load_used_ids():
     try:
         with open(USED_FILE, "r", encoding="utf-8") as f:
             return set(json.load(f))
-    except:
+    except Exception as e:
+        logging.error(f"[ManifestationHer] Failed to load used IDs: {e}", exc_info=True)
         return set()
 
 def save_used_ids(used_ids):
@@ -35,7 +35,7 @@ def save_used_ids(used_ids):
         with open(USED_FILE, "w", encoding="utf-8") as f:
             json.dump(sorted(list(used_ids)), f, indent=2)
     except Exception as e:
-        logging.error(f"[ManifestationHer] Save error: {e}")
+        logging.error(f"[ManifestationHer] Save error: {e}", exc_info=True)
 
 def pick_new_manifestation(manifestations, used_ids):
     unused = [m for m in manifestations if m["id"] not in used_ids]
@@ -63,9 +63,13 @@ def get_today_manifestation():
 async def send_manifestation_for_her(app, index):
     try:
         manifestation = get_today_manifestation()
+        if not manifestation or "set" not in manifestation or index >= len(manifestation["set"]):
+            logging.error(f"[ManifestationHer] No manifestation found for index {index}")
+            return
+
         line = manifestation["set"][index]
         message = f"🌅 Manifestation for Her:\n\n{line}"
         await app.bot.send_message(chat_id=int(os.getenv("CHAT_ID_HER")), text=message)
         logging.info(f"[ManifestationHer] Sent index {index} from ID {manifestation['id']}")
     except Exception as e:
-        logging.exception(f"[ManifestationHer] Failed to send: {e}")
+        logging.error(f"[ManifestationHer] Failed to send index {index}: {e}", exc_info=True)

@@ -10,7 +10,7 @@ from bot import manifestation as manifestation_module
 from bot import cards as cards_module
 from bot.manifestation import send_manifestation
 from bot.cards import send_card_prompt, send_card_reveal
-from bot.manifestation_for_her import send_manifestation_for_her  # ✅ NEW IMPORT
+from bot.manifestation_for_her import send_manifestation_for_her
 
 tz = pytz.timezone("Asia/Kolkata")
 
@@ -70,13 +70,19 @@ async def force_manifest(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def force_manifest_her(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("⏱ Sending 3 manifestations for her...")
     logging.info("Manual trigger: /force_manifest_her")
-    try:
-        for i in range(3):
+    errors = []
+    for i in range(3):
+        try:
             await send_manifestation_for_her(context.application, i)
-        logging.info("All 3 manifestations for her sent manually.")
-    except Exception as e:
-        logging.error(f"Error in /force_manifest_her: {e}")
-        await update.message.reply_text("❌ Failed to send manifestations for her.")
+        except Exception as e:
+            logging.error(f"[force_manifest_her] Error sending index {i}: {e}", exc_info=True)
+            errors.append(i)
+
+    if errors:
+        await update.message.reply_text(f"⚠️ Failed to send indexes: {errors}")
+    else:
+        await update.message.reply_text("✅ All 3 manifestations for her sent successfully.")
+    logging.info("Finished /force_manifest_her execution.")
 
 async def force_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
