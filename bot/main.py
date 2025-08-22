@@ -5,7 +5,9 @@ from telegram.ext import ApplicationBuilder
 
 from bot.handlers import setup_handlers
 from bot.scheduler import setup_jobs
-
+from bot.db import init_db
+...
+init_db()
 def main():
     load_dotenv(Path(__file__).parent.parent / ".env")
 

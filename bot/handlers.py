@@ -11,6 +11,10 @@ import pytz
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, Application
 
+from telegram.ext import CommandHandler, CallbackQueryHandler
+from bot.focus import start_pomodoro, handle_phone_free_callback
+from bot.db import get_focus_status, set_focus_target
+
 # Your project modules
 from bot import manifestation as manifestation_module
 from bot import cards as cards_module
@@ -28,6 +32,62 @@ TZ = pytz.timezone("Asia/Kolkata")
 # -----------------------------------------------------------------------------
 # Command handlers
 # -----------------------------------------------------------------------------
+
+async def focus_cmd(update, context):
+    """
+    /focus [minutes] [#tag]
+    Examples:
+      /focus           -> 25m default
+      /focus 50        -> 50m
+      /focus 25 #spec  -> tag='spec'
+    """
+    user = update.effective_user
+    chat_id = update.effective_chat.id
+    args = context.args
+
+    # defaults
+    duration = 25
+    tag = None
+    if args:
+        try:
+            if args[0].isdigit():
+                duration = int(args[0])
+                if len(args) > 1 and args[1].startswith("#"):
+                    tag = args[1][1:]
+            elif args[0].startswith("#"):
+                tag = args[0][1:]
+                if len(args) > 1 and args[1].isdigit():
+                    duration = int(args[1])
+        except Exception:
+            pass
+
+    # quick commit prompt inline? keep it simple: assume commit on
+    commit_phone = True
+    await start_pomodoro(context.application, chat_id, user.id, duration, tag, commit_phone, ask_mid_ping=True)
+
+async def focus_target_cmd(update, context):
+    """ /focus_target 3  -> require 3 phone-free sessions/day to count towards streak """
+    user = update.effective_user
+    try:
+        target = int(context.args[0]) if context.args else 1
+        set_focus_target(user.id, max(1, target))
+        await update.message.reply_text(f"Daily streak target set to {max(1, target)} phone‑free session(s).")
+    except Exception as e:
+        await update.message.reply_text(f"Error: {e}")
+
+async def focus_status_cmd(update, context):
+    """ Show last 7 days + current streak """
+    user = update.effective_user
+    daily, streak = get_focus_status(user.id)
+    lines = []
+    for r in daily:
+        lines.append(f"{r['local_date']}: {r['sessions']} session(s), {r['phone_free_sessions']} phone‑free")
+    if streak:
+        lines.append(f"\nStreak: {streak['streak_days']} day(s) • Target/day: {streak['target_per_day']}")
+    await update.message.reply_text("\n".join(lines) if lines else "No focus data yet.")
+
+
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Greet and point to help."""
@@ -134,18 +194,50 @@ async def clear_cache(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Usage overview."""
     help_text = (
-        "Commands:\n"
-        "/start – greet\n"
-        "/health – liveness check\n"
-        "/status – show config/time\n"
-        "/force_manifest – send today's manifestation set (you) now\n"
-        "/force_manifest_her – send today's manifestation set (her) now\n"
-        "/force_card – send card prompt now\n"
-        "/force_reveal – send card reveal now\n"
-        "/clear_cache – delete runtime used_* caches if present\n"
-        "/test_in <minutes> – schedule both (you + her) one‑off tests starting in <minutes>\n"
-        "/test_at <HH:MM> – schedule both (you + her) today at HH:MM Asia/Kolkata (or tomorrow if passed)\n"
-    )
+    "🧠 Vision30X Bot Help\n"
+    "\n"
+    "This bot delivers daily belief‑boosting manifestations and reflection cards, and helps you build\n"
+    "deep‑work focus with Pomodoro sessions and streaks — inspired by Manifest, Atomic Habits, and The 5AM Club.\n"
+    "\n"
+    "⏱ Daily Schedule (Asia/Kolkata):\n"
+    "• 08:00 — Manifestation (Line 1: Root Thought)\n"
+    "• 08:15 — Manifestation (Line 2: Reframe)\n"
+    "• 08:30 — Manifestation (Line 3: Reinforce)\n"
+    "• 08:01/08:16/08:31 — Manifestations for Her (staggered +1 min)\n"
+    "• 10:00 — Card drawn (kept hidden)\n"
+    "• 19:00 — Card revealed with reflection\n"
+    "\n"
+    "🛠 Manual Commands:\n"
+    "• /force_manifest — Send all 3 manifestations (you) now\n"
+    "• /force_manifest_her — Send all 3 manifestations (her) now\n"
+    "• /force_card — Pick a card immediately (kept hidden)\n"
+    "• /force_reveal — Reveal the current card\n"
+    "• /clear_cache — Clear today’s manifestation/card usage caches\n"
+    "• /status — Show config + server time\n"
+    "• /health — Quick bot liveness check\n"
+    "• /start — Welcome message\n"
+    "• /help — Show this help message\n"
+    "\n"
+    "🎯 Focus / Pomodoro (with streaks):\n"
+    "• /focus — Start a 25‑minute Pomodoro (default). The bot nudges at halfway and at the end.\n"
+    "• /focus 50 — Start a 50‑minute deep‑work sprint.\n"
+    "• /focus 25 #spec — Start 25 minutes with an optional tag (e.g., #spec, #study, #gym).\n"
+    "  At the end, tap ✅ Phone‑free or ❌ Slipped to log honesty and update your streak.\n"
+    "• /focus_target <n> — Set how many phone‑free sessions/day extend your streak (default 1).\n"
+    "• /focus_status — See the last 7 days of sessions and your current streak.\n"
+    "\n"
+    "🧪 Scheduler Tests (useful after deploy/restart):\n"
+    "• /test_in <minutes> — Schedule both (you + her) one‑off manifestation runs starting in <minutes>.\n"
+    "  Example: /test_in 5  → runs in ~5 minutes (staggered by ~30–60s).\n"
+    "• /test_at <HH:MM> — Schedule both for today at a clock time (Asia/Kolkata), or tomorrow if passed.\n"
+    "  Example: /test_at 21:35\n"
+    "\n"
+    "👉 Tips:\n"
+    "• Keep your phone away during /focus blocks for true deep work and streak credit.\n"
+    "• Use /focus_target to pick a realistic daily threshold (e.g., 2 or 3) and build consistency.\n"
+    "• If the bot restarts or misses a schedule, use /test_in or /force_* commands to catch up.\n"
+)
+
     await update.message.reply_text(help_text)
     logging.info("/help served")
 
@@ -196,3 +288,9 @@ def setup_handlers(app: Application) -> None:
     # Testing / scheduler helpers
     app.add_handler(CommandHandler("test_in", test_in))
     app.add_handler(CommandHandler("test_at", test_at))
+
+    #focus handlers
+    app.add_handler(CommandHandler("focus", focus_cmd))
+    app.add_handler(CommandHandler("focus_target", focus_target_cmd))
+    app.add_handler(CommandHandler("focus_status", focus_status_cmd))
+    app.add_handler(CallbackQueryHandler(handle_phone_free_callback, pattern=r"^pfree:"))
