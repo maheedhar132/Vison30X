@@ -1,171 +1,198 @@
-from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
-from datetime import datetime
-import pytz
+# bot/handlers.py
+
+from __future__ import annotations
+
 import logging
 import os
 import traceback
+from datetime import datetime
+import pytz
 
+from telegram import Update
+from telegram.ext import CommandHandler, ContextTypes, Application
+
+# Your project modules
 from bot import manifestation as manifestation_module
 from bot import cards as cards_module
 from bot.manifestation import send_manifestation
-from bot.cards import send_card_prompt, send_card_reveal
 from bot.manifestation_for_her import send_manifestation_for_her
-
-tz = pytz.timezone("Asia/Kolkata")
-
-# Logging setup
-LOG_DIR = "/var/log/vision30x"
-os.makedirs(LOG_DIR, exist_ok=True)
-logging.basicConfig(
-    filename=os.path.join(LOG_DIR, "bot.log"),
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+from bot.cards import send_card_prompt, send_card_reveal
+# Testing helpers from the new scheduler implementation
+from bot.scheduler import (
+    schedule_one_off_manifestations_in,
+    schedule_one_off_at_clock_time,
 )
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_chat.id
+TZ = pytz.timezone("Asia/Kolkata")
+
+# -----------------------------------------------------------------------------
+# Command handlers
+# -----------------------------------------------------------------------------
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Greet and point to help."""
     await update.message.reply_text(
-        f"Welcome to Vision30X Bot!\n\nYour chat ID:\n`{user_id}`\n\nPaste it into your `.env` file as:\n\n`CHAT_ID={user_id}`",
-        parse_mode="Markdown"
+        "Hi! I'm your growth assistant bot.\n"
+        "Try /help to see available commands."
     )
-    logging.info(f"/start used by chat_id {user_id}")
+    logging.info("/start served")
 
-async def health(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Bot is alive and responding.")
-    logging.info("/health command acknowledged.")
+async def health(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Simple liveness check with server time."""
+    now = datetime.now(TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
+    await update.message.reply_text(f"OK ✅\nTime: {now}")
+    logging.info("/health served")
 
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    manifest = context.bot_data.get("today_manifest")
-    card = context.bot_data.get("chosen_card")
-    now = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show configured chat IDs and a quick status."""
+    bot_token = bool(os.getenv("BOT_TOKEN"))
+    chat_id = os.getenv("CHAT_ID", "<unset>")
+    chat_id_her = os.getenv("CHAT_ID_HER", "<unset>")
+    now = datetime.now(TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
-    msg = f"📋 Vision30X Status\n\n🕒 {now} IST\n"
+    await update.message.reply_text(
+        "Status:\n"
+        f"- BOT_TOKEN set: {'yes' if bot_token else 'no'}\n"
+        f"- CHAT_ID: {chat_id}\n"
+        f"- CHAT_ID_HER: {chat_id_her}\n"
+        f"- Server time: {now}\n"
+        "Use /test_in 1 or /test_at HH:MM to verify scheduler delivery."
+    )
+    logging.info("/status served")
 
-    if manifest:
-        msg += f"\n🧠 Manifest ID: {manifest['id']}\n→ “{manifest['set'][0][:40]}...”"
-    else:
-        msg += "\n🧠 Manifestation: Not yet picked."
-
-    if card:
-        msg += f"\n\n🃏 Card: {card['title']}"
-    else:
-        msg += "\n\n🃏 Card: Not drawn yet."
-
-    await update.message.reply_text(msg)
-    logging.info("Status command responded.")
-
-async def force_manifest(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("⏱ Sending 3 manifestations...")
-    logging.info("Manual trigger: /force_manifest")
+async def force_manifest(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Force-send the 3 manifestation lines for you, immediately."""
     try:
-        for i in range(3):
-            await send_manifestation(context.application, i)
-        logging.info("All 3 manifestations sent manually.")
+        # indexes 0,1,2 correspond to the three lines in the set
+        await send_manifestation(context.application, 0)
+        await send_manifestation(context.application, 1)
+        await send_manifestation(context.application, 2)
+        await update.message.reply_text("Sent manifestation set ✅")
     except Exception as e:
-        logging.error(f"Error in /force_manifest: {e}")
-        await update.message.reply_text("❌ Failed to send manifestations.")
+        logging.exception("force_manifest error")
+        await update.message.reply_text(f"Error: {e}")
 
-# ✅ NEW HANDLER for her
-async def force_manifest_her(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("⏱ Sending 3 manifestations for her...")
-    logging.info("Manual trigger: /force_manifest_her")
-    errors = []
-    for i in range(3):
-        try:
-            await send_manifestation_for_her(context.application, i)
-        except Exception as e:
-            logging.error(f"[force_manifest_her] Error sending index {i}: {e}", exc_info=True)
-            errors.append(i)
+async def force_manifest_her(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Force-send the 3 manifestation lines for her, immediately."""
+    try:
+        await send_manifestation_for_her(context.application, 0)
+        await send_manifestation_for_her(context.application, 1)
+        await send_manifestation_for_her(context.application, 2)
+        await update.message.reply_text("Sent manifestation set (her) ✅")
+    except Exception as e:
+        logging.exception("force_manifest_her error")
+        await update.message.reply_text(f"Error: {e}")
 
-    if errors:
-        await update.message.reply_text(f"⚠️ Failed to send indexes: {errors}")
-    else:
-        await update.message.reply_text("✅ All 3 manifestations for her sent successfully.")
-    logging.info("Finished /force_manifest_her execution.")
-
-async def force_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def force_card(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Force-send card prompt."""
     try:
         await send_card_prompt(context.application)
-        await update.message.reply_text("🃏 Card prompt sent.")
-        logging.info("/force_card used.")
+        await update.message.reply_text("Sent card prompt ✅")
     except Exception as e:
-        logging.error(f"Error in /force_card: {e}")
-        await update.message.reply_text("❌ Failed to draw card.")
+        logging.exception("force_card error")
+        await update.message.reply_text(f"Error: {e}")
 
-async def force_reveal(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def force_reveal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Force-send card reveal."""
     try:
-        chosen = context.bot_data.get("chosen_card")
-        if not chosen:
-            await update.message.reply_text("⚠️ No card drawn yet. Use /force_card first.")
-            logging.warning("/force_reveal used without drawing card first.")
-            return
-
         await send_card_reveal(context.application)
-        await update.message.reply_text("🔮 Card revealed.")
-        logging.info("/force_reveal executed.")
+        await update.message.reply_text("Sent card reveal ✅")
     except Exception as e:
-        tb = traceback.format_exc()
-        logging.error(f"Error in /force_reveal: {e}\n{tb}")
-        await update.message.reply_text("❌ Failed to reveal card.")
+        logging.exception("force_reveal error")
+        await update.message.reply_text(f"Error: {e}")
 
-async def clear_cache(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        # Clear in-memory cache from manifestation.py
-        manifestation_module._cached_today = None
-        manifestation_module._cached_manifestation = None
+async def clear_cache(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Clear any runtime 'used' caches if they exist, e.g. used_manifestations.json files.
+    This is safe; if files don't exist, nothing happens.
+    """
+    from pathlib import Path
 
-        # Clear in-memory cache from cards.py
-        cards_module._cached_card_day = None
-        cards_module._cached_card = None
+    base_dir = Path(__file__).resolve().parent
+    data_dir = base_dir / "data"
 
-        # Delete used_manifestations.json if it exists
-        used_file = manifestation_module.USED_FILE
-        if used_file.exists():
-            used_file.unlink()
-            logging.info("[/clear_cache] Deleted used_manifestations.json.")
-        else:
-            logging.info("[/clear_cache] No used_manifestations.json to delete.")
+    candidates = [
+        data_dir / "used_manifestations.json",
+        data_dir / "used_manifestations_for_her.json",
+    ]
 
-        await update.message.reply_text("♻️ Cache and used manifestations have been cleared.")
-        logging.info("/clear_cache executed successfully.")
+    removed = []
+    for f in candidates:
+        try:
+            if f.exists():
+                f.unlink()
+                removed.append(f.name)
+        except Exception as e:
+            logging.warning(f"Failed to remove {f}: {e}")
 
-    except Exception as e:
-        logging.error(f"[/clear_cache] Error clearing cache: {e}")
-        await update.message.reply_text("❌ Failed to clear cache.")
+    if removed:
+        await update.message.reply_text("Cleared cache files: " + ", ".join(removed))
+    else:
+        await update.message.reply_text("No cache files found to clear.")
+    logging.info("/clear_cache served")
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Usage overview."""
     help_text = (
-        "🧠 Vision30X Bot Help\n\n"
-        "This bot sends daily belief-boosting messages and affirmation cards inspired by elite mindset rituals.\n\n"
-        "⏱ Daily Schedule:\n"
-        "• 9:00 AM - Manifestation (Root Thought)\n"
-        "• 9:15 AM - Manifestation (Reframe)\n"
-        "• 9:30 AM - Manifestation (Reinforce)\n"
-        "• 10:00 AM - Card drawn (kept hidden)\n"
-        "• 7:00 PM - Card revealed with reflection\n\n"
-        "🛠 Manual Commands:\n"
-        "• /force_manifest — Send all 3 manifestations now\n"
-        "• /force_manifest_her — Send all 3 manifestations for her now\n"
-        "• /force_card — Pick a card immediately (kept hidden)\n"
-        "• /force_reveal — Reveal the current card\n"
-        "• /clear_cache — Clear today's manifestation/card + usage history\n"
-        "• /status — See today’s manifest and card\n"
-        "• /health — Ping the bot to check if it’s running\n"
-        "• /start — Show your Telegram CHAT_ID for .env setup\n"
-        "• /help — Show this help message\n\n"
-        "👉 Use these if the bot restarts mid-day or misses a schedule."
+        "Commands:\n"
+        "/start – greet\n"
+        "/health – liveness check\n"
+        "/status – show config/time\n"
+        "/force_manifest – send today's manifestation set (you) now\n"
+        "/force_manifest_her – send today's manifestation set (her) now\n"
+        "/force_card – send card prompt now\n"
+        "/force_reveal – send card reveal now\n"
+        "/clear_cache – delete runtime used_* caches if present\n"
+        "/test_in <minutes> – schedule both (you + her) one‑off tests starting in <minutes>\n"
+        "/test_at <HH:MM> – schedule both (you + her) today at HH:MM Asia/Kolkata (or tomorrow if passed)\n"
     )
     await update.message.reply_text(help_text)
-    logging.info("/help command served.")
+    logging.info("/help served")
 
-def setup_handlers(app):
+# -----------------------------------------------------------------------------
+# Test scheduling commands (hook into JobQueue via bot.scheduler)
+# -----------------------------------------------------------------------------
+
+async def test_in(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Example: /test_in 5  -> schedule both sets to start in 5 minutes."""
+    try:
+        minutes = int(context.args[0]) if context.args else 5
+        schedule_one_off_manifestations_in(context.application, minutes_from_now=minutes)
+        await update.message.reply_text(f"Scheduled test jobs to start in {minutes} minute(s).")
+    except Exception as e:
+        logging.exception("test_in error")
+        await update.message.reply_text(f"Error: {e}")
+
+async def test_at(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Example: /test_at 21:35  -> schedule both sets for 21:35 Asia/Kolkata today (or tomorrow if past)."""
+    try:
+        if not context.args:
+            await update.message.reply_text("Usage: /test_at HH:MM (24h, Asia/Kolkata)")
+            return
+        hh, mm = context.args[0].split(":")
+        schedule_one_off_at_clock_time(context.application, int(hh), int(mm))
+        await update.message.reply_text(f"Scheduled test jobs for {context.args[0]} Asia/Kolkata.")
+    except Exception as e:
+        logging.exception("test_at error")
+        await update.message.reply_text(f"Error: {e}")
+
+# -----------------------------------------------------------------------------
+# Registration
+# -----------------------------------------------------------------------------
+
+def setup_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("health", health))
     app.add_handler(CommandHandler("status", status))
+
     app.add_handler(CommandHandler("force_manifest", force_manifest))
-    app.add_handler(CommandHandler("force_manifest_her", force_manifest_her))  # ✅ NEW
+    app.add_handler(CommandHandler("force_manifest_her", force_manifest_her))
     app.add_handler(CommandHandler("force_card", force_card))
     app.add_handler(CommandHandler("force_reveal", force_reveal))
+
     app.add_handler(CommandHandler("clear_cache", clear_cache))
     app.add_handler(CommandHandler("help", help_command))
+
+    # Testing / scheduler helpers
+    app.add_handler(CommandHandler("test_in", test_in))
+    app.add_handler(CommandHandler("test_at", test_at))
