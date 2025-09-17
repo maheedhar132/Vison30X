@@ -1,142 +1,204 @@
+# bot/cards.py
+"""
+Card draw + reveal module.
+Behavior:
+- On draw: choose (or reuse persisted) a card for today and send the hidden prompt to both CHAT_ID and CHAT_ID_HER.
+- On reveal: reveal the same card to both CHAT_ID and CHAT_ID_HER.
+- Persists today_card.json in V30X_DATA_DIR (or ~/.vison30x) so restarts don't redraw different cards mid-day.
+"""
+
+from __future__ import annotations
+
 import os
 import json
-import random
 import logging
-from datetime import datetime
-from dotenv import load_dotenv
-import textwrap
+import random
+from datetime import datetime, date
+from pathlib import Path
+from typing import Optional
 
-# Load .env variables
-load_dotenv()
-CHAT_ID = int(os.getenv("CHAT_ID", "0"))
+# runtime / repo paths
+BASE_DIR = Path(__file__).resolve().parent
+READONLY_DATA_DIR = BASE_DIR / "data"   # should contain cards.json (repo)
+RUNTIME_DIR = Path(os.getenv("V30X_DATA_DIR", Path.home() / ".vison30x"))
+RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
 
-# Logging configuration
-LOG_DIR = "/var/log/vision30x"
-os.makedirs(LOG_DIR, exist_ok=True)
-logging.basicConfig(
-    filename=os.path.join(LOG_DIR, "bot.log"),
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+CARDS_FILE = READONLY_DATA_DIR / "cards.json"
+TODAY_CARD_FILE = RUNTIME_DIR / "today_card.json"
 
-# File path setup
-DATA_PATH = os.path.dirname(__file__)
-CARDS_FILE = os.path.join(DATA_PATH, "data", "cards.json")
+# helper: atomic write
+def _atomic_write(path: Path, obj) -> None:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
+    tmp.replace(path)
 
-def load_cards():
+# load cards list
+def load_cards() -> list:
     try:
-        with open(CARDS_FILE, encoding="utf-8") as f:
-            return json.load(f)
+        with CARDS_FILE.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                logging.error("[Cards] cards.json malformed (expected list).")
+                return []
+            return data
     except Exception as e:
-        logging.error(f"Failed to load cards: {e}")
+        logging.exception("[Cards] Failed to load cards.json: %s", e)
         return []
 
-def wrap_text_block(text, width):
-    lines = textwrap.wrap(text, width)
-    return [line.ljust(width) for line in lines]
+def load_today_card_state() -> Optional[dict]:
+    """Return {'date': 'YYYY-MM-DD', 'id': <card_id>} or None."""
+    if not TODAY_CARD_FILE.exists():
+        return None
+    try:
+        with TODAY_CARD_FILE.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logging.warning("[Cards] Failed to load today card state: %s", e)
+        return None
 
-def calculate_dynamic_width(title, message, reflection, base_width=42, padding=4):
-    candidates = (
-        [title]
-        + textwrap.wrap(message, base_width)
-        + textwrap.wrap(reflection, base_width)
-        + ["Reflect:"]
-    )
-    max_line = max((len(line) for line in candidates), default=base_width)
-    return max(base_width, min(max_line + padding, 80))
+def save_today_card_state(state: dict) -> bool:
+    try:
+        _atomic_write(TODAY_CARD_FILE, state)
+        logging.info("[Cards] Saved today_card state: %s", state)
+        return True
+    except Exception as e:
+        logging.exception("[Cards] Failed to save today_card state: %s", e)
+        return False
 
-# Cache for daily picked card
-_cached_card_day = None
-_cached_card = None
+def pick_random_card(cards: list) -> Optional[dict]:
+    if not cards:
+        return None
+    return random.choice(cards)
+
+def _today_local_date_iso() -> str:
+    try:
+        from zoneinfo import ZoneInfo
+        tz = os.getenv("V30X_TZ", "Asia/Kolkata")
+        return datetime.now(ZoneInfo(tz)).date().isoformat()
+    except Exception:
+        return datetime.now().date().isoformat()
+
+# Public API used by scheduler/handlers --------------------------------------
 
 async def send_card_prompt(app):
-    global _cached_card_day, _cached_card
-
+    """
+    Draw (or reuse) today's card and send the *hidden* prompt/message to both users (you + her).
+    Keeps compatibility with existing scheduler which calls send_card_prompt(context.application).
+    """
     try:
-        today = datetime.now().date()
-
-        # Only pick once per day
-        if _cached_card_day != today:
-            cards = load_cards()
-            if not cards:
-                await app.bot.send_message(CHAT_ID, "❌ No cards found.")
-                return
-
-            _cached_card = random.choice(cards)
-            _cached_card_day = today
-            logging.info(f"Card picked: {json.dumps(_cached_card, indent=2)}")
-
-        app.bot_data["chosen_card"] = _cached_card
-
-        print(f"[DEBUG] Card picked: {_cached_card.get('title', 'N/A')}")
-        print(f"[DEBUG] Full card: {json.dumps(_cached_card, indent=2)}")
-
-        await app.bot.send_message(CHAT_ID, "🃏 A new affirmation card has been drawn. Reflect on your day.")
-
-    except Exception as e:
-        logging.error(f"Failed to send card prompt: {e}")
-        await app.bot.send_message(CHAT_ID, "❌ Failed to send card prompt.")
-
-async def send_card_reveal(app):
-    try:
-        chosen = app.bot_data.get("chosen_card")
-
-        if not chosen:
-            await app.bot.send_message(CHAT_ID, "⚠️ No card drawn yet. Use /force_card first.")
+        cards = load_cards()
+        if not cards:
+            logging.error("[Cards] No cards available to draw.")
             return
 
-        title = chosen.get("title", "").strip()
-        message_text = chosen.get("message", "").strip()
-        reflection = chosen.get("reflection") or chosen.get("prompt", "")
-        reflection = reflection.strip()
+        today = _today_local_date_iso()
+        state = load_today_card_state()
+        chosen_card = None
 
-        if not all([title, message_text, reflection]):
-            raise ValueError("Missing one or more required card fields: title, message, reflection/prompt")
+        # Reuse persisted today's card if date matches
+        if state and state.get("date") == today:
+            card_id = state.get("id")
+            chosen_card = next((c for c in cards if c.get("title") == card_id or c.get("id") == card_id), None)
+            if chosen_card:
+                logging.info("[Cards] Reusing persisted today card: %s", card_id)
 
-        box_width = 30
-        border = "─" * (box_width + 2)
+        # If no persisted or not found, pick a random one and persist
+        if not chosen_card:
+            chosen_card = pick_random_card(cards)
+            if not chosen_card:
+                logging.error("[Cards] Failed to pick a card.")
+                return
+            # We persist by using either "id" field if present else "title" as identifier
+            card_identifier = chosen_card.get("id") if chosen_card.get("id") is not None else chosen_card.get("title")
+            save_today_card_state({"date": today, "id": card_identifier})
+            logging.info("[Cards] Drew and persisted today card: %s", card_identifier)
 
-        # Strip emoji from the start and store separately
-        message_emoji = message_text[0] if ord(message_text[0]) > 127 else ""
-        reflection_emoji = reflection[0] if ord(reflection[0]) > 127 else ""
+        # prepare the hidden prompt message
+        hidden_msg = chosen_card.get("message", "")
+        title = chosen_card.get("title", "Today’s Card")
+        prompt_text = chosen_card.get("prompt", "")
 
-        message_clean = message_text[1:].strip() if message_emoji else message_text
-        reflection_clean = reflection[1:].strip() if reflection_emoji else reflection
+        # A subtle hidden prompt: we send the message but keep "reveal" semantics for later
+        # You can customise formatting here if you want the prompt to remain hidden (e.g., replaced text)
+        hidden_payload = f"🃏 Card drawn — keep this safe until reveal.\n\n*{title}*\n\n{hidden_msg}\n\n(Will be revealed later.)"
 
-        message_lines = wrap_text_block(message_clean, box_width)
-        reflection_lines = wrap_text_block(reflection_clean, box_width)
+        # send to both chats (if configured)
+        chat_me = os.getenv("CHAT_ID")
+        chat_her = os.getenv("CHAT_ID_HER")
 
-        card_lines = [
-            f"┌{border}┐",
-            f"│ {'🌟 YOUR CARD TODAY'.center(box_width)} │",
-            f"├{border}┤",
-            f"│ 🔖 {title.ljust(box_width - 3)} │",
-            f"├{border}┤",
-        ]
+        if chat_me:
+            try:
+                await app.bot.send_message(chat_id=int(chat_me), text=hidden_payload, parse_mode="Markdown")
+            except Exception as e:
+                logging.exception("[Cards] Failed to send hidden card to CHAT_ID: %s", e)
 
-        # Emoji on its own line for message block
-        if message_emoji:
-            card_lines.append(f"{message_emoji}")
-        for line in message_lines:
-            card_lines.append(f"│ {line} │")
+        if chat_her:
+            try:
+                await app.bot.send_message(chat_id=int(chat_her), text=hidden_payload, parse_mode="Markdown")
+            except Exception as e:
+                logging.exception("[Cards] Failed to send hidden card to CHAT_ID_HER: %s", e)
 
-        card_lines.append(f"├{border}┤")
-
-        # Emoji on its own line for reflection block
-        if reflection_emoji:
-            card_lines.append(f"{reflection_emoji}")
-        for line in reflection_lines:
-            card_lines.append(f"│ {line} │")
-
-        card_lines.append(f"└{border}┘")
-
-        card_text = "\n".join(card_lines)
-
-        logging.info(f"Card revealed: {title}")
-        print(f"[DEBUG] Revealed card:\n{card_text}")
-        await app.bot.send_message(CHAT_ID, card_text)
-
+        logging.info("[Cards] Hidden prompt sent to both recipients (if available).")
     except Exception as e:
-        logging.exception("Failed to reveal card")
-        print(f"[ERROR] Reveal failed: {e}")
-        await app.bot.send_message(CHAT_ID, "❌ Failed to reveal card.")
+        logging.exception("[Cards] send_card_prompt error: %s", e)
+
+
+async def send_card_reveal(app):
+    """
+    Reveal today's card (same card drawn earlier) to both users with the full prompt + reflective question.
+    """
+    try:
+        cards = load_cards()
+        if not cards:
+            logging.error("[Cards] No cards available to reveal.")
+            return
+
+        today = _today_local_date_iso()
+        state = load_today_card_state()
+        chosen_card = None
+
+        # If persisted card exists for today, find it
+        if state and state.get("date") == today:
+            card_id = state.get("id")
+            chosen_card = next((c for c in cards if c.get("title") == card_id or c.get("id") == card_id), None)
+
+        # If not persisted or not found, pick deterministic/random fallback (so reveal still happens)
+        if not chosen_card:
+            chosen_card = pick_random_card(cards)
+            logging.warning("[Cards] No persisted today card found at reveal time — picking random for reveal.")
+
+        title = chosen_card.get("title", "Today's Card")
+        message = chosen_card.get("message", "")
+        prompt = chosen_card.get("prompt", "")
+
+        reveal_payload = f"🔔 Card Reveal\n\n*{title}*\n\n{message}\n\n*Reflection:* {prompt}"
+
+        chat_me = os.getenv("CHAT_ID")
+        chat_her = os.getenv("CHAT_ID_HER")
+
+        if chat_me:
+            try:
+                await app.bot.send_message(chat_id=int(chat_me), text=reveal_payload, parse_mode="Markdown")
+            except Exception as e:
+                logging.exception("[Cards] Failed to send reveal to CHAT_ID: %s", e)
+
+        if chat_her:
+            try:
+                await app.bot.send_message(chat_id=int(chat_her), text=reveal_payload, parse_mode="Markdown")
+            except Exception as e:
+                logging.exception("[Cards] Failed to send reveal to CHAT_ID_HER: %s", e)
+
+        logging.info("[Cards] Card revealed to both recipients (if available).")
+    except Exception as e:
+        logging.exception("[Cards] send_card_reveal error: %s", e)
+
+
+# optional helper to clear today's persisted card (useful for reset/testing)
+def clear_today_card_state():
+    try:
+        if TODAY_CARD_FILE.exists():
+            TODAY_CARD_FILE.unlink()
+            logging.info("[Cards] Cleared today_card.json")
+    except Exception as e:
+        logging.exception("[Cards] Failed to clear today card state: %s", e)
