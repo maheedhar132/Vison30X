@@ -240,18 +240,19 @@ def setup_jobs(app: Application) -> None:
     weekly_vitamin_time = _env_time("REMINDER_WEEKLY", 9, 0)
 
     # attach jobs if reminders module exists; otherwise they're no-ops (and logged)
-    jq.run_daily(_job_send_reminder, morning_time, name="reminder_morning", days=None, data={"slot": "morning"})
-    jq.run_daily(_job_send_reminder, mid_morning_time, name="reminder_mid_morning", days=None, data={"slot": "mid_morning"})
-    jq.run_daily(_job_send_reminder, lunch_time, name="reminder_lunch", days=None, data={"slot": "lunch"})
-    jq.run_daily(_job_send_reminder, evening_time, name="reminder_evening", days=None, data={"slot": "evening"})
-    jq.run_daily(_job_send_reminder, night_time, name="reminder_night", days=None, data={"slot": "night"})
+    # IMPORTANT: do not pass days=None (caused startup crash); omit days for daily scheduling
+    jq.run_daily(_job_send_reminder, morning_time, name="reminder_morning", data={"slot": "morning"})
+    jq.run_daily(_job_send_reminder, mid_morning_time, name="reminder_mid_morning", data={"slot": "mid_morning"})
+    jq.run_daily(_job_send_reminder, lunch_time, name="reminder_lunch", data={"slot": "lunch"})
+    jq.run_daily(_job_send_reminder, evening_time, name="reminder_evening", data={"slot": "evening"})
+    jq.run_daily(_job_send_reminder, night_time, name="reminder_night", data={"slot": "night"})
 
     # weekly vitamin D on Sundays (weekday=6)
     # NOTE: run_daily accepts days parameter in PTB; pass (6,) to schedule only Sundays.
     try:
         jq.run_daily(_job_send_weekly_reminder, weekly_vitamin_time, days=(6,), name="reminder_weekly_vitamin", data={"key": "vitamin_d"})
     except TypeError:
-        # older PTB versions may accept 'days' differently; best-effort fallback: schedule daily but the reminder function can check weekday.
+        # older PTB versions may accept 'days' differently; best-effort fallback: schedule daily
         jq.run_daily(_job_send_weekly_reminder, weekly_vitamin_time, name="reminder_weekly_vitamin", data={"key": "vitamin_d"})
 
     logging.info("Scheduler: jobs registered (manifestations, cards, reminders).")
@@ -303,4 +304,3 @@ def schedule_one_off_at_clock_time(app: Application, hh: int, mm: int) -> None:
     # Also schedule card prompt + reveal around the same window
     jq.run_once(_job_card_prompt, when=at + timedelta(minutes=3), name="at_card_prompt")
     jq.run_once(_job_card_reveal, when=at + timedelta(minutes=4), name="at_card_reveal")
-
