@@ -1,29 +1,26 @@
 # bot/reflection.py
-import sqlite3
+from __future__ import annotations
 from datetime import datetime
 from typing import Literal, Optional
-from bot.db import get_conn
 
+import bot.db as db
 
 ReflectionType = Literal["manifestation", "card"]
 RecipientType = Literal["me", "her"]
-
 
 def record_reflection(
     reflection_type: ReflectionType,
     payload_id: str,
     recipient: RecipientType,
     ack: Optional[str] = None,
-):
+) -> None:
     """
-    Records a reflection artifact.
-    This is append-only, no updates.
+    Append-only reflection artifact.
     """
     ts = datetime.utcnow().isoformat()
 
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute(
+    with db.connect() as conn:
+        conn.execute(
             """
             INSERT INTO reflection_artifacts
             (timestamp, type, payload_id, recipient, ack)
@@ -31,4 +28,3 @@ def record_reflection(
             """,
             (ts, reflection_type, payload_id, recipient, ack),
         )
-        conn.commit()
